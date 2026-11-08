@@ -8,11 +8,11 @@
 </style>
 </head>
 <body>
-<header><div class="brand"><div class="logo">▣</div><div><h1>Biblioteca Externa</h1><p>Mapas, tokens e objetos por links · versão 1.2</p></div></div><span class="pill" id="connection">Modo navegador · Biblioteca disponível</span></header>
+<header><div class="brand"><div class="logo">▣</div><div><h1>Biblioteca Externa</h1><p>Mapas, tokens e objetos por links · versão 1.3</p></div></div><span class="pill" id="connection">Modo navegador · Biblioteca disponível</span></header>
 <main><section class="hero"><h2>Suas imagens, em um só lugar</h2><p>Cadastre links públicos de imagens de diferentes sites, organize sua biblioteca e insira na cena do Owlbear Rodeo. Esta interface abre mesmo sem o SDK.</p></section>
 <div class="layout"><section class="panel"><h3 id="formTitle">Adicionar imagem por link</h3><form id="imageForm"><div class="field"><label for="name">Nome da imagem</label><input id="name" maxlength="100" required placeholder="Ex.: Fortaleza abandonada"></div><div class="field"><label for="url">URL direta da imagem (HTTPS)</label><input id="url" type="url" required placeholder="https://site.com/imagem.png"></div><div class="field"><label for="type">Categoria / camada</label><select id="type"><option value="MAP">Mapa de batalha</option><option value="CHARACTER">Token / personagem</option><option value="PROP">Objeto / cenário</option><option value="ATTACHMENT">Anexo visual</option></select></div><div class="field"><label for="source">Origem ou coleção (opcional)</label><input id="source" maxlength="80" placeholder="Ex.: Dark Mass / Drive público"></div><div class="actions"><button class="btn primary" id="saveBtn" type="submit">Salvar na biblioteca</button><button class="btn" id="cancelEdit" type="button" hidden>Cancelar edição</button></div></form><div class="status" id="message" role="status" aria-live="polite">Biblioteca carregada. Você pode cadastrar sua primeira imagem.</div><p class="small">URLs de visualização do Google Drive nem sempre são links diretos de imagem. O servidor externo também deve permitir o carregamento da mídia.</p></section>
 <section class="panel"><h3>Minha biblioteca</h3><div class="toolbar"><input id="search" placeholder="Pesquisar nome ou origem" aria-label="Pesquisar"><select id="filter" aria-label="Filtrar categoria"><option value="">Todas</option><option value="MAP">Mapas</option><option value="CHARACTER">Tokens</option><option value="PROP">Objetos</option><option value="ATTACHMENT">Anexos</option></select><button class="btn" id="exportBtn">Exportar backup</button><button class="btn" id="importBtn">Importar</button><input id="backupFile" type="file" accept="application/json,.json"></div><div id="count" class="count">0 imagens</div><div id="gallery" class="gallery"><div class="empty">Nenhuma imagem cadastrada ainda.</div></div></section></div>
-<div class="footer"><b>Modo de uso:</b> fora do Owlbear a biblioteca serve para guardar e visualizar links. Dentro de uma sala com cena aberta, use o botão <b>Inserir na cena</b>. Os registros ficam no armazenamento local deste navegador/origem; faça backups para não perdê-los.<br><b>Diagnóstico:</b> caso o botão de inserção apresente erro, a interface e seus links permanecem disponíveis.</div></main>
+<div class="status" style="margin-top:14px"><b>Diagnóstico da integração:</b> <span id="sdkDiagnostics">Verificando…</span> <button type="button" class="btn" id="retrySdk" style="margin-left:10px">Tentar conectar novamente</button></div><div class="footer"><b>Modo de uso:</b> fora do Owlbear a biblioteca serve para guardar e visualizar links. Dentro de uma sala com cena aberta, use o botão <b>Inserir na cena</b>. Os registros ficam no armazenamento local deste navegador/origem; faça backups para não perdê-los.<br><b>Diagnóstico:</b> caso o botão de inserção apresente erro, a interface e seus links permanecem disponíveis.</div></main>
 <script>
 (function(){'use strict';
 const STORAGE='owlbear.external.library.static.v1';
@@ -34,10 +34,82 @@ $('exportBtn').onclick=()=>{const b=new Blob([JSON.stringify({format:'owlbear-ex
 $('importBtn').onclick=()=>$('backupFile').click();$('backupFile').onchange=async e=>{const file=e.target.files?.[0];if(!file)return;try{const data=JSON.parse(await file.text());const source=Array.isArray(data)?data:data.items;if(!Array.isArray(source))throw Error('JSON sem lista de imagens.');const incoming=source.map(normalize).filter(Boolean);if(!incoming.length)throw Error('Nenhuma imagem HTTPS válida encontrada.');const seen=new Set(items.map(x=>x.url));let added=0;for(const a of incoming){if(!seen.has(a.url)){items.push(a);seen.add(a.url);added++;}}persist();render();status(added+' imagem(ns) importada(s); repetidas ignoradas.');}catch(err){status('Falha na importação: '+err.message,true);}finally{e.target.value='';}};
 function mime(url){const path=new URL(url).pathname.toLowerCase();if(path.endsWith('.jpg')||path.endsWith('.jpeg'))return'image/jpeg';if(path.endsWith('.gif'))return'image/gif';if(path.endsWith('.webp'))return'image/webp';if(path.endsWith('.svg'))return'image/svg+xml';return'image/png';}
 function dimensions(url){return new Promise(resolve=>{const image=new Image();let finished=false;const finish=(result)=>{if(finished)return;finished=true;resolve(result);};image.onload=()=>finish({width:image.naturalWidth||300,height:image.naturalHeight||300});image.onerror=()=>finish({width:300,height:300});image.src=url;setTimeout(()=>finish({width:300,height:300}),3500);});}
-async function getSDK(){if(sdk)return sdk;if(sdkLoading)return sdkLoading;sdkLoading=import('https://esm.sh/@owlbear-rodeo/sdk@3.1.0').then(mod=>{if(!mod.default||!mod.buildImage)throw Error('O módulo SDK não possui as funções esperadas.');sdk=mod;return mod;}).catch(err=>{sdkLoading=null;throw err;});return sdkLoading;}
-async function insertItem(a){status('Verificando integração com o Owlbear…');try{if(window.parent===window){throw Error('Abra esta biblioteca pelo painel de extensões dentro de uma sala do Owlbear Rodeo.');}const {default:OBR,buildImage}=await getSDK();if(!OBR.isAvailable)throw Error('Não foi detectado o Owlbear Rodeo nesta janela.');if(!OBR.isReady){await Promise.race([new Promise(resolve=>OBR.onReady(resolve)),new Promise((_,reject)=>setTimeout(()=>reject(Error('Owlbear não respondeu à inicialização.')),8000))]);}const ready=await OBR.scene.isReady();if(!ready)throw Error('Abra uma cena antes de inserir imagens.');const size=await dimensions(a.url);const item=buildImage({url:a.url,mime:mime(a.url),width:size.width,height:size.height},{dpi:150,offset:{x:size.width/2,y:size.height/2}}).name(a.name).layer(a.type).build();await OBR.scene.items.addItems([item]);status('"'+a.name+'" adicionada à cena!');}catch(err){status('Não foi possível inserir: '+(err.message||String(err))+'. Sua biblioteca continua salva.',true);}}
+// O SDK inicia quando a página abre, não apenas no primeiro clique.
+let sdkReadyPromise=null, sdkState='Aguardando SDK', sdkError='';
+function connection(message){$('connection').textContent=message;}
+async function getSDK(){
+  if(sdk)return sdk;
+  if(sdkLoading)return sdkLoading;
+  sdkLoading=(async()=>{
+    let lastError;
+    for(const url of ['https://esm.sh/@owlbear-rodeo/sdk@3.1.0?bundle','https://cdn.jsdelivr.net/npm/@owlbear-rodeo/sdk@3.1.0/+esm']){
+      try{
+        const mod=await import(url);
+        if(!mod.default||!mod.buildImage)throw Error('Exportações do SDK ausentes');
+        sdk=mod;
+        return sdk;
+      }catch(err){lastError=err;console.warn('[Biblioteca] Falha ao importar SDK',url,err);}
+    }
+    throw Error('Não foi possível carregar o SDK das fontes configuradas: '+(lastError?.message||lastError));
+  })().catch(err=>{sdkLoading=null;throw err;});
+  return sdkLoading;
+}
+function readyWithTimeout(OBR,ms){
+  if(OBR.isReady)return Promise.resolve();
+  return new Promise((resolve,reject)=>{
+    let finished=false,unsubscribe=()=>{};
+    const finish=(error)=>{if(finished)return;finished=true;clearTimeout(timer);clearInterval(poll);try{unsubscribe()}catch{};error?reject(error):resolve();};
+    const timer=setTimeout(()=>finish(Error('O SDK não recebeu confirmação de inicialização em '+Math.round(ms/1000)+' segundos.')),ms);
+    const poll=setInterval(()=>{if(OBR.isReady)finish();},400);
+    try{unsubscribe=OBR.onReady(()=>finish())||(()=>{});}catch(err){finish(err);}
+    if(OBR.isReady)finish();
+  });
+}
+async function connectSDK(){
+  if(window.parent===window){sdkState='Modo navegador';connection('Modo navegador · Biblioteca disponível');return false;}
+  if(sdkReadyPromise)return sdkReadyPromise;
+  connection('Conectando ao Owlbear…');sdkState='Carregando módulo';
+  sdkReadyPromise=(async()=>{
+    const {default:OBR}=await getSDK();
+    sdkState='Módulo carregado';
+    if(!OBR.isAvailable)throw Error('SDK carregado, mas o iframe não foi identificado como extensão do Owlbear.');
+    sdkState='Aguardando comunicação com Owlbear';
+    await readyWithTimeout(OBR,20000);
+    sdkState='Conectado';sdkError='';connection('Owlbear conectado · Pronto para usar');
+    return true;
+  })().catch(err=>{
+    sdkState='Falha de inicialização';sdkError=err.message||String(err);
+    connection('Owlbear não conectado · Ver diagnóstico');
+    console.error('[Biblioteca] Falha ao iniciar SDK:',err);
+    return false;
+  });
+  return sdkReadyPromise;
+}
+async function insertItem(a){
+  status('Conectando à cena do Owlbear…');
+  try{
+    if(window.parent===window)throw Error('Abra a biblioteca dentro do Owlbear para inserir imagens.');
+    if(!await connectSDK())throw Error(sdkError||'SDK não conectado');
+    const {default:OBR,buildImage}=await getSDK();
+    if(!await OBR.scene.isReady())throw Error('Abra uma cena e tente novamente.');
+    const size=await dimensions(a.url);
+    const item=buildImage({url:a.url,mime:mime(a.url),width:size.width,height:size.height},{dpi:150,offset:{x:size.width/2,y:size.height/2}}).name(a.name).layer(a.type).build();
+    await OBR.scene.items.addItems([item]);
+    status('“'+a.name+'” inserida na cena!');
+  }catch(err){
+    status('Falha ao inserir: '+(err.message||String(err))+'. Consulte o diagnóstico abaixo. Seus links continuam salvos.',true);
+    console.error('[Biblioteca] Inserção falhou:',err);
+  }
+}
+function updateDiagnostics(){
+  const panel=$('sdkDiagnostics');if(!panel)return;
+  const available=!!sdk?.default?.isAvailable,ready=!!sdk?.default?.isReady;
+  panel.textContent='Estado: '+sdkState+' | iframe: '+(window.parent!==window?'sim':'não')+' | SDK disponível: '+available+' | SDK pronto: '+ready+(sdkError?' | Erro: '+sdkError:'');
+}
+$('retrySdk').onclick=()=>{sdkReadyPromise=null;sdkLoading=null;sdk=null;sdkError='';connectSDK().then(updateDiagnostics);};
+setInterval(updateDiagnostics,1500);
 window.addEventListener('error',e=>status('Erro de interface: '+e.message,true));window.addEventListener('unhandledrejection',e=>status('Erro de integração: '+(e.reason?.message||String(e.reason)),true));
-load();render();$('connection').textContent=window.parent===window?'Modo navegador · Biblioteca disponível':'Modo integrado · Conexão sob demanda';
+load();render();connectSDK().then(updateDiagnostics);
 })();
 </script>
 </body></html>

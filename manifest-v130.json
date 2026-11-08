@@ -1,0 +1,14 @@
+{
+  "name": "Biblioteca Externa - Links",
+  "version": "1.3.0",
+  "manifest_version": 1,
+  "description": "Biblioteca externa de imagens para cenas do Owlbear Rodeo",
+  "author": "Taykyo-Feru",
+  "action": {
+    "title": "Biblioteca Externa 1.3",
+    "icon": "https://taykyo-feru.github.io/owlbear-biblioteca/icon.svg",
+    "popover": "https://taykyo-feru.github.io/owlbear-biblioteca/index.html?v=130",
+    "width": 580,
+    "height": 700
+  }
+}

@@ -1,28 +1,18 @@
-# Biblioteca Externa para Owlbear Rodeo — versão 1.2
+# Biblioteca Externa v1.3 — diagnóstico de conexão Owlbear
 
-Projeto totalmente estático, sem build, sem npm, sem workflow: `index.html`, `manifest.json`, `icon.svg` e `.nojekyll` na **raiz do repositório**.
+Esta atualização conserva os itens na mesma chave de armazenamento (`owlbear.external.library.static.v1`).
 
-## Publicação
+## Publicação (sem npm)
 
-1. Na aba **Code** do GitHub, exclua ou substitua o `index.html` de teste pelo novo `index.html`.
-2. Adicione `manifest.json` e `icon.svg` na raiz do repositório; inclua `.nojekyll` se conseguir carregar arquivos com ponto.
-3. Em **Settings → Pages**, mantenha **Deploy from a branch → main → /(root)**.
-4. Após a publicação, abra `https://SEU-USUARIO.github.io/NOME-DO-REPOSITORIO/`.
-5. Confira `https://SEU-USUARIO.github.io/NOME-DO-REPOSITORIO/manifest.json`.
-6. No Owlbear Rodeo, adicione este link de `manifest.json` como extensão personalizada e ative-a em uma sala.
+Suba para a RAIZ da branch main os arquivos `index.html`, `manifest.json`, `manifest-v130.json`, `icon.svg` e `.nojekyll`. Em Settings > Pages mantenha Deploy from a branch > main > /(root).
 
-## Funções
+Primeiro abra https://taykyo-feru.github.io/owlbear-biblioteca/?v=130 e confirme versão 1.3. Depois confira que https://taykyo-feru.github.io/owlbear-biblioteca/manifest-v130.json mostra 1.3.0. No Owlbear, instale pelo endereço do manifesto versionado, como extensão nova, e abra na sala.
 
-- Biblioteca de links de imagens HTTPS.
-- Miniaturas, categorias (mapa, token, objeto e anexo), campo de origem, pesquisa, edição e exclusão.
-- Backup e importação JSON, com duplicatas por URL ignoradas.
-- Tentativa de inserção na cena via SDK oficial do Owlbear Rodeo, carregado apenas ao clicar no botão Inserir na cena.
-- Mensagens de erro visíveis. A interface **não precisa do SDK para abrir**.
+## O que mudou
 
-## Limitações
+- O SDK é inicializado quando o painel abre, sem aguardar clique em Inserir.
+- A espera por onReady foi ampliada para 20 s, com leitura de isReady, timeout controlado e retry.
+- Há segunda fonte para importar o SDK e mensagens de diagnóstico para diferenciar download e conexão.
+- O cadastro e os backups continuam funcionando fora do Owlbear.
 
-- Os links ficam no `localStorage` do navegador/origem. Não sincroniza entre computadores. Use exportar backup.
-- O servidor das imagens precisa aceitar exibição externa. Alguns links de compartilhamento do Drive/Dropbox não são URLs diretas.
-- O SDK é importado sob demanda de `https://esm.sh/@owlbear-rodeo/sdk@3.1.0` e depende desse CDN estar disponível. Caso esteja bloqueado, o cadastro continua funcionando, mas inserir na cena falhará com mensagem.
-- Imagens não são copiadas para o Owlbear; seus URLs devem continuar públicos.
-- A inserção na cena depende de validação dentro do VTT real; não foi testada em sessão.
+Não foi possível testar a conexão real numa sala Owlbear neste ambiente. O diagnóstico vai mostrar onde parou, sem afirmar que a inserção já está corrigida. Se o status ficar em Falha de inicialização, envie a mensagem completa do diagnóstico.
