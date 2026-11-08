@@ -1,0 +1,10 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+const read=(name)=>fs.readFileSync(new URL('../'+name,import.meta.url),'utf8');
+test('index possui interface renderizada sem SDK',()=>{const html=read('index.html');assert.match(html, /Seus mapas e tokens/);assert.match(html, /id="gallery"/);assert.match(html, /src="\.\/app\.js\?v=1\.0\.0"/);});
+test('arquivos necessários para deploy existem',()=>{for(const path of ['style.css','app.js','icon.svg','scripts/manifest.mjs','.github/workflows/deploy.yml'])assert.ok(read(path).length>100,path);});
+test('manifesto está válido e aponta para o repositório correto',()=>{const manifest=JSON.parse(read('manifest.json'));assert.equal(manifest.manifest_version,1);assert.match(manifest.action.popover,/taykyo-feru\.github\.io\/owlbear-biblioteca\/index\.html/);});
+test('workflow é estático, sem npm ou compilação',()=>{const wf=read('.github/workflows/deploy.yml');assert.match(wf,/upload-pages-artifact/);assert.doesNotMatch(wf,/npm install|npm run build|vite/);});
+test('imagem carregada fora do Owlbear não depende do SDK para desenhar HTML',()=>{const app=read('app.js');assert.match(app,/function render\(/);assert.match(app,/if\(window\.parent===window\)/);assert.match(app,/await import\(/);});
+test('URL da instalação gerada usa o caminho da subpasta',()=>{const code=read('scripts/manifest.mjs');assert.match(code,/github\.io\/\$\{name\}\//);});

@@ -1,0 +1,11 @@
+import fs from 'node:fs';
+const repo=process.env.REPO || 'Taykyo-Feru/owlbear-biblioteca';
+const [owner,name]=repo.split('/');
+if(!owner || !name) throw new Error('Formato de repositorio incorreto');
+const base=`https://${owner.toLowerCase()}.github.io/${name}/`;
+const data=JSON.parse(fs.readFileSync('manifest.json','utf8'));
+data.icon=base+'icon.svg';
+data.action.icon=base+'icon.svg';
+data.action.popover=base+'index.html?v='+data.version;
+fs.writeFileSync('_site/manifest.json',JSON.stringify(data,null,2)+'\n');
+console.log('Manifesto publicado em: '+base+'manifest.json');
