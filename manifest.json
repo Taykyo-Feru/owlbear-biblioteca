@@ -1,14 +1,14 @@
 {
   "name": "Biblioteca Externa - Links",
-  "description": "Organize imagens externas e insira mapas, tokens e objetos nas cenas.",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "manifest_version": 1,
-  "icon": "https://taykyo-feru.github.io/owlbear-biblioteca/icon.svg",
+  "description": "Biblioteca de URLs de mapas, tokens e objetos para inserir nas cenas do Owlbear Rodeo.",
+  "author": "Biblioteca Externa",
   "action": {
     "title": "Biblioteca Externa",
-    "icon": "https://taykyo-feru.github.io/owlbear-biblioteca/icon.svg",
-    "popover": "https://taykyo-feru.github.io/owlbear-biblioteca/index.html?v=1.0.0",
-    "width": 440,
-    "height": 690
+    "icon": "./icon.svg",
+    "popover": "./index.html",
+    "width": 580,
+    "height": 700
   }
 }
